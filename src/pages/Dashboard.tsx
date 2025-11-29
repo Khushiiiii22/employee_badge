@@ -27,12 +27,35 @@ const Dashboard = () => {
         return;
       }
 
+      // Check if user is admin
       const { data: roles } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", user.id);
 
       const hasAdminRole = roles?.some((r) => r.role === "admin");
+      
+      // If not admin, check onboarding status
+      if (!hasAdminRole) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("onboarding_status")
+          .eq("id", user.id)
+          .single();
+
+        // If onboarding not completed, redirect to onboarding
+        if (!profile?.onboarding_status || profile.onboarding_status === 'pending' || profile.onboarding_status === 'rejected') {
+          navigate("/onboarding");
+          return;
+        }
+        
+        // Only allow dashboard access if verified
+        if (profile.onboarding_status !== 'verified') {
+          navigate("/onboarding");
+          return;
+        }
+      }
+      
       setIsAdmin(hasAdminRole || false);
     } catch (error: any) {
       toast({

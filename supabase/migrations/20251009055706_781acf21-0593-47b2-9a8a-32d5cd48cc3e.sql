@@ -47,7 +47,8 @@ CREATE TABLE public.documents (
 );
 
 -- Create storage bucket for documents
-INSERT INTO storage.buckets (id, name, public) VALUES ('documents', 'documents', false);
+INSERT INTO storage.buckets (id, name, public) VALUES ('documents', 'documents', false)
+ON CONFLICT (id) DO NOTHING;
 
 -- Enable RLS on all tables
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
@@ -201,4 +202,5 @@ INSERT INTO public.departments (name, description) VALUES
   ('Onboarding', 'New employee onboarding team'),
   ('Sales', 'Sales and business development'),
   ('Marketing', 'Marketing and communications'),
-  ('IT', 'Information technology and support');
+  ('IT', 'Information technology and support')
+ON CONFLICT (name) DO NOTHING;

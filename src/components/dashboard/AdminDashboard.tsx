@@ -3,17 +3,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import DashboardLayout from "./DashboardLayout";
 import StatsCard from "./StatsCard";
-import { Users, FileText, Building2, BookOpen } from "lucide-react";
+import { Users, FileText, Building2, BookOpen, CheckSquare } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import EmployeeManagementTab from "./admin/EmployeeManagementTab";
 import FormManagementTab from "./admin/FormManagementTab";
 import TrainingManagementTab from "./admin/TrainingManagementTab";
+import OnboardingSubmissionsTab from "./admin/OnboardingSubmissionsTab";
 
 interface Stats {
   totalEmployees: number;
   totalDocuments: number;
   totalTrainingSessions: number;
   totalTemplates: number;
+  totalOnboardingSubmissions: number;
 }
 
 const AdminDashboard = () => {
@@ -22,6 +24,7 @@ const AdminDashboard = () => {
     totalDocuments: 0,
     totalTrainingSessions: 0,
     totalTemplates: 0,
+    totalOnboardingSubmissions: 0,
   });
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -32,11 +35,12 @@ const AdminDashboard = () => {
 
   const loadDashboardData = async () => {
     try {
-      const [profilesCount, documentsCount, trainingSessions, templatesCount] = await Promise.all([
+      const [profilesCount, documentsCount, trainingSessions, templatesCount, onboardingSubmissions] = await Promise.all([
         supabase.from("profiles").select("*", { count: "exact", head: true }),
         supabase.from("documents").select("*", { count: "exact", head: true }),
         supabase.from("training_sessions").select("*", { count: "exact", head: true }),
         supabase.from("department_document_templates").select("*", { count: "exact", head: true }),
+        supabase.from("department_signup_form_submissions").select("*", { count: "exact", head: true }),
       ]);
 
       setStats({
@@ -44,6 +48,7 @@ const AdminDashboard = () => {
         totalDocuments: documentsCount.count || 0,
         totalTrainingSessions: trainingSessions.count || 0,
         totalTemplates: templatesCount.count || 0,
+        totalOnboardingSubmissions: onboardingSubmissions.count || 0,
       });
     } catch (error: any) {
       toast({
@@ -60,7 +65,7 @@ const AdminDashboard = () => {
     <DashboardLayout title="Admin Dashboard" subtitle="Manage employees, forms, and training">
       <div className="space-y-6">
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <StatsCard
             title="Total Employees"
             value={stats.totalEmployees}
@@ -76,11 +81,16 @@ const AdminDashboard = () => {
             value={stats.totalTrainingSessions}
             icon={BookOpen}
           />
+          <StatsCard
+            title="Onboarding Forms"
+            value={stats.totalOnboardingSubmissions}
+            icon={CheckSquare}
+          />
         </div>
 
         {/* Main Tabs */}
         <Tabs defaultValue="employees" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="employees">
               <Users className="w-4 h-4 mr-2" />
               Employees
@@ -88,6 +98,10 @@ const AdminDashboard = () => {
             <TabsTrigger value="forms">
               <Building2 className="w-4 h-4 mr-2" />
               Department Forms
+            </TabsTrigger>
+            <TabsTrigger value="submissions">
+              <CheckSquare className="w-4 h-4 mr-2" />
+              Submissions
             </TabsTrigger>
             <TabsTrigger value="training">
               <BookOpen className="w-4 h-4 mr-2" />
@@ -101,6 +115,10 @@ const AdminDashboard = () => {
 
           <TabsContent value="forms" className="mt-6">
             <FormManagementTab />
+          </TabsContent>
+
+          <TabsContent value="submissions" className="mt-6">
+            <OnboardingSubmissionsTab />
           </TabsContent>
 
           <TabsContent value="training" className="mt-6">

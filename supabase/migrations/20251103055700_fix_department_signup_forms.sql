@@ -31,6 +31,11 @@ ALTER TABLE public.department_signup_forms ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.department_signup_form_submissions ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for department_signup_forms
+-- Drop existing policies first to avoid conflicts
+DROP POLICY IF EXISTS "Admins can manage department signup forms" ON public.department_signup_forms;
+DROP POLICY IF EXISTS "Users can view their department signup forms" ON public.department_signup_forms;
+
+-- Create the policies
 CREATE POLICY "Admins can manage department signup forms"
   ON public.department_signup_forms FOR ALL
   USING (has_role(auth.uid(), 'admin'::app_role));
@@ -44,6 +49,12 @@ CREATE POLICY "Users can view their department signup forms"
   );
 
 -- RLS Policies for department_signup_form_submissions
+-- Drop existing policies first to avoid conflicts
+DROP POLICY IF EXISTS "Admins can manage all form submissions" ON public.department_signup_form_submissions;
+DROP POLICY IF EXISTS "Users can view their own submissions" ON public.department_signup_form_submissions;
+DROP POLICY IF EXISTS "Users can create submissions" ON public.department_signup_form_submissions;
+
+-- Create the policies
 CREATE POLICY "Admins can manage all form submissions"
   ON public.department_signup_form_submissions FOR ALL
   USING (has_role(auth.uid(), 'admin'::app_role));
@@ -57,16 +68,17 @@ CREATE POLICY "Users can create submissions"
   WITH CHECK (user_id = auth.uid());
 
 -- Create triggers for updated_at
+DROP TRIGGER IF EXISTS update_department_signup_forms_updated_at ON public.department_signup_forms;
 CREATE TRIGGER update_department_signup_forms_updated_at
   BEFORE UPDATE ON public.department_signup_forms
   FOR EACH ROW
   EXECUTE FUNCTION public.update_updated_at();
 
 -- Create indexes for better performance
-CREATE INDEX idx_department_signup_forms_department_id ON public.department_signup_forms(department_id);
-CREATE INDEX idx_department_signup_forms_form_name ON public.department_signup_forms(form_name);
-CREATE INDEX idx_department_signup_form_submissions_form_id ON public.department_signup_form_submissions(form_id);
-CREATE INDEX idx_department_signup_form_submissions_user_id ON public.department_signup_form_submissions(user_id);
+CREATE INDEX IF NOT EXISTS idx_department_signup_forms_department_id ON public.department_signup_forms(department_id);
+CREATE INDEX IF NOT EXISTS idx_department_signup_forms_form_name ON public.department_signup_forms(form_name);
+CREATE INDEX IF NOT EXISTS idx_department_signup_form_submissions_form_id ON public.department_signup_form_submissions(form_id);
+CREATE INDEX IF NOT EXISTS idx_department_signup_form_submissions_user_id ON public.department_signup_form_submissions(user_id);
 
 -- Insert default forms for each department if they don't exist
 INSERT INTO public.department_signup_forms (department_id, form_name, form_description, form_fields)

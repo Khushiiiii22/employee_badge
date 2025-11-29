@@ -17,8 +17,18 @@ interface Department {
 
 const Auth = () => {
   const [loading, setLoading] = useState(false);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [selectedDepartment, setSelectedDepartment] = useState<string>("");
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      const { data, error } = await supabase.from("departments").select("*").order("name");
+      if (!error && data) setDepartments(data);
+    };
+    fetchDepartments();
+  }, []);
 
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -29,6 +39,17 @@ const Auth = () => {
     const password = formData.get("password") as string;
     const fullName = formData.get("fullName") as string;
     const phoneNumber = formData.get("phoneNumber") as string;
+    const departmentId = formData.get("department") as string;
+
+    if (!departmentId) {
+      toast({
+        variant: "destructive",
+        title: "Department Required",
+        description: "Please select a department.",
+      });
+      setLoading(false);
+      return;
+    }
 
     try {
       const { data, error } = await supabase.auth.signUp({
@@ -38,6 +59,7 @@ const Auth = () => {
           data: {
             full_name: fullName,
             phone_number: phoneNumber,
+            department_id: departmentId,
           },
           emailRedirectTo: `${window.location.origin}/`,
         },
@@ -46,21 +68,15 @@ const Auth = () => {
       if (error) throw error;
       if (!data.user) throw new Error("User creation failed");
 
-      // Send confirmation email
-      try {
-        await supabase.functions.invoke("send-confirmation-email", {
-          body: {
-            email,
-            fullName,
-          },
-        });
-      } catch (emailError) {
-        console.error("Error sending confirmation email:", emailError);
-      }
+      // Update profile with department_id (in case not set by auth)
+      await supabase
+        .from("profiles")
+        .update({ department_id: departmentId })
+        .eq("id", data.user.id);
 
       toast({
         title: "Account created successfully!",
-        description: "A confirmation email has been sent. Please complete your profile.",
+        description: "Please complete your onboarding profile.",
       });
 
       navigate("/onboarding");
@@ -84,14 +100,44 @@ const Auth = () => {
     const password = formData.get("password") as string;
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) throw error;
 
-      navigate("/dashboard");
+      // Check if user is admin
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", data.user.id);
+
+      const isAdmin = roles?.some((r) => r.role === "admin");
+
+      if (isAdmin) {
+        // Admins go directly to dashboard
+        navigate("/dashboard");
+      } else {
+        // Regular users: check onboarding status
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("onboarding_status")
+          .eq("id", data.user.id)
+          .single();
+
+        // Redirect based on onboarding status
+        if (!profile?.onboarding_status || 
+            profile.onboarding_status === 'pending' || 
+            profile.onboarding_status === 'rejected') {
+          navigate("/onboarding");
+        } else if (profile.onboarding_status === 'verified') {
+          navigate("/dashboard");
+        } else {
+          // For any other status, send to onboarding
+          navigate("/onboarding");
+        }
+      }
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -200,7 +246,26 @@ const Auth = () => {
                     required
                   />
                 </div>
-
+                <div className="space-y-2">
+                  <Label htmlFor="department">Department</Label>
+                  <Select
+                    value={selectedDepartment}
+                    onValueChange={setSelectedDepartment}
+                    name="department"
+                    required
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {departments.map((dept) => (
+                        <SelectItem key={dept.id} value={dept.id}>
+                          {dept.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? (
                     <>

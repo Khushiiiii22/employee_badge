@@ -261,6 +261,7 @@ export type Database = {
           onboarding_status: string | null
           phone_number: string | null
           updated_at: string | null
+          rejection_reason: string | null
         }
         Insert: {
           created_at?: string | null
@@ -272,6 +273,7 @@ export type Database = {
           onboarding_status?: string | null
           phone_number?: string | null
           updated_at?: string | null
+          rejection_reason?: string | null
         }
         Update: {
           created_at?: string | null
@@ -283,6 +285,7 @@ export type Database = {
           onboarding_status?: string | null
           phone_number?: string | null
           updated_at?: string | null
+          rejection_reason?: string | null
         }
         Relationships: [
           {
@@ -478,6 +481,16 @@ export type Database = {
           submission_data: Json
           submitted_at: string | null
           user_id: string
+          is_draft: boolean | null
+          draft_data: Json | null
+          uploaded_files: Json | null
+          completion_percentage: number | null
+          last_saved_at: string | null
+          reviewed_by: string | null
+          reviewed_at: string | null
+          rejection_reason: string | null
+          created_at: string | null
+          updated_at: string | null
         }
         Insert: {
           form_id: string
@@ -486,6 +499,16 @@ export type Database = {
           submission_data: Json
           submitted_at?: string | null
           user_id: string
+          is_draft?: boolean | null
+          draft_data?: Json | null
+          uploaded_files?: Json | null
+          completion_percentage?: number | null
+          last_saved_at?: string | null
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+          rejection_reason?: string | null
+          created_at?: string | null
+          updated_at?: string | null
         }
         Update: {
           form_id?: string
@@ -494,6 +517,16 @@ export type Database = {
           submission_data?: Json
           submitted_at?: string | null
           user_id?: string
+          is_draft?: boolean | null
+          draft_data?: Json | null
+          uploaded_files?: Json | null
+          completion_percentage?: number | null
+          last_saved_at?: string | null
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+          rejection_reason?: string | null
+          created_at?: string | null
+          updated_at?: string | null
         }
         Relationships: [
           {

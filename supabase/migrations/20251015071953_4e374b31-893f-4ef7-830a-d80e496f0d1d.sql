@@ -1,6 +1,14 @@
 -- Create the employee_docs storage bucket
 INSERT INTO storage.buckets (id, name, public)
-VALUES ('employee_docs', 'employee_docs', false);
+VALUES ('employee_docs', 'employee_docs', false)
+ON CONFLICT (id) DO NOTHING;
+
+-- Drop existing policies first to avoid conflicts
+DROP POLICY IF EXISTS "Users can upload to employee_docs" ON storage.objects;
+DROP POLICY IF EXISTS "Users can view their employee_docs" ON storage.objects;
+DROP POLICY IF EXISTS "Admins can view all employee_docs" ON storage.objects;
+DROP POLICY IF EXISTS "Admins can upload to employee_docs for users" ON storage.objects;
+DROP POLICY IF EXISTS "Admins can delete from employee_docs" ON storage.objects;
 
 -- Allow authenticated users to upload their own documents to employee_docs
 CREATE POLICY "Users can upload to employee_docs"
